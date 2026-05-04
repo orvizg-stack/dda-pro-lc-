@@ -18,14 +18,16 @@ button.secondary{background:transparent; color:var(--acc2); border:2px solid var
 button.danger{background:transparent; color:var(--bad); border:2px solid var(--bad); box-shadow:0 0 10px rgba(251,113,133,.4)}
 input,select,textarea{width:100%; padding:14px; margin:8px 0 14px; border-radius:14px; border:2px solid var(--acc); background:var(--card2); color:var(--txt); font-size:16px; outline:none}
 label{display:block; color:var(--acc); font-weight:700; margin-top:10px; text-shadow:0 0 5px var(--acc)}
-.tabs{display:grid; grid-template-columns:repeat(5,1fr); gap:10px}
+.tabs{display:grid; grid-template-columns:repeat(4,1fr); gap:5px}
+.info-box{background:rgba(96,165,250,.08); border:1px solid rgba(96,165,250,.3); border-radius:14px; padding:12px; margin-top:10px; line-height:1.45}
+.rotation-item{margin-top:10px; padding:12px; border-radius:14px; background:rgba(96,165,250,.08); border:1px solid var(--acc2)}
 .swap-result{margin-top:18px; padding:16px; border-radius:16px; font-weight:700; line-height:1.5}
 .swap-ok{background:rgba(74,222,128,.1); border:2px solid var(--ok); color:var(--ok)}
 .swap-bad{background:rgba(251,113,133,.1); border:2px solid var(--bad); color:var(--bad)}
-.swap-warning{background:rgba(250,204,21,.1); border:2px solid var(--warn); color:var(--warn)}
 </style>
 </head>
 <body>
+
 <div id="loginCard" class="card">
   <h2>Connexion</h2>
   <label>Code profil</label><input id="login" placeholder="Ex : PNC01">
@@ -43,7 +45,6 @@ label{display:block; color:var(--acc); font-weight:700; margin-top:10px; text-sh
   <div class="tabs">
     <button onclick="showTab('mesRotations')">Rots</button>
     <button onclick="showTab('moteurSwap')">Swap</button>
-    <button onclick="showTab('historique')">Hist</button>
     <button onclick="showTab('strategieRepos')">Repos</button>
     <button id="adminTabBtn" onclick="showTab('adminPanel')" class="secondary hidden">Admin</button>
   </div>
@@ -52,26 +53,69 @@ label{display:block; color:var(--acc); font-weight:700; margin-top:10px; text-sh
 <div id="appCard3" class="card hidden">
   <div id="mesRotations"><h3>Mes rotations</h3><div id="rotationsList"></div></div>
   <div id="moteurSwap" class="hidden"><h3>Swap</h3><select id="rotationActuelle"></select><input id="rotationRecherchee" placeholder="Rotation recherchée"><button onclick="calcSwap()">Calculer</button><div id="swapResult" class="swap-result hidden"></div></div>
-  <div id="historique" class="hidden"><h3>Historique</h3><input id="historiqueRotation" placeholder="Rotation"><select id="historiqueResultat"><option value="obtenue">Obtenue</option><option value="non_obtenue">Non obtenue</option></select><button onclick="saveHistorique()">Enregistrer</button><div id="historiqueMessage" class="swap-result hidden"></div><div id="historiqueListe"></div></div>
-  <div id="strategieRepos" class="hidden"><h3>Stratégie Repos</h3><label>Rotation</label><select id="selectRotationRepos"></select><button onclick="calculerFatigue()">Calculer Fatigue</button><div id="resultatFatigue" class="swap-result hidden"></div></div>
+  <div id="strategieRepos" class="hidden"><h3>Stratégie Repos</h3><select id="selectRotationRepos"></select><button onclick="calculerFatigue()">Calculer Fatigue</button><div id="resultatFatigue" class="swap-result hidden"></div></div>
   <div id="adminPanel" class="hidden"><h3>Admin</h3><input id="searchImmat" placeholder="Recherche Immat" oninput="renderProfiles()"><div id="profilesList"></div></div>
 </div>
 
 <script>
-// ... (Utilise le même script que la version précédente, 
-//      assure-toi juste d'ajouter la nouvelle fonction calculerFatigue ci-dessous) ...
+const USERS = {
+  PNC01:{password:"demo01", nom:"Alex Martin", grade:"CC", immat:"700001", base:"CDG", rotations:["JFK 4J 320€","NRT 5J 410€"]},
+  PNC02:{password:"demo02", nom:"Sophie Laurent", grade:"CC", immat:"700002", base:"ORY", rotations:["LAX 5J 430€","MAD 2J 120€"]},
+  PNC03:{password:"demo03", nom:"Julien Robert", grade:"PNC", immat:"700003", base:"CDG", rotations:["DXB 4J 360€","FCO 2J 110€"]}
+};
+
+function connect(){
+  const l = document.getElementById("login").value.trim().toUpperCase();
+  const p = document.getElementById("pass").value.trim();
+  if(l==="ADMIN" && p==="admin2026"){ sessionStorage.setItem("ddaCurrentLogin","ADMIN"); openApp(); return; }
+  if(USERS[l] && USERS[l].password === p){ sessionStorage.setItem("ddaCurrentLogin", l); openApp(); }
+  else { alert("Identifiants incorrects"); }
+}
+
+function openApp(){
+  document.getElementById("loginCard").classList.add("hidden");
+  ["appCard","appCard2","appCard3"].forEach(id => document.getElementById(id).classList.remove("hidden"));
+  document.getElementById("adminTabBtn").classList.toggle("hidden", sessionStorage.getItem("ddaCurrentLogin")!=="ADMIN");
+  render();
+}
+
+function render(){
+  const l = sessionStorage.getItem("ddaCurrentLogin");
+  const u = USERS[l];
+  if(u){
+    document.getElementById("userResume").innerHTML = `${l} - ${u.nom}`;
+    document.getElementById("rotationsList").innerHTML = u.rotations.map(r=>`<div class="rotation-item">${r}</div>`).join("");
+    const sel = document.getElementById("rotationActuelle");
+    const sel2 = document.getElementById("selectRotationRepos");
+    if(sel) sel.innerHTML = u.rotations.map(r=>`<option value="${r}">${r}</option>`).join("");
+    if(sel2) sel2.innerHTML = u.rotations.map(r=>`<option value="${r}">${r}</option>`).join("");
+  }
+}
+
+function showTab(id){
+  ["mesRotations","moteurSwap","strategieRepos","adminPanel"].forEach(t => document.getElementById(t).classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+}
+
+function calcSwap(){
+  const a = document.getElementById("rotationActuelle").value;
+  const res = document.getElementById("swapResult");
+  res.classList.remove("hidden");
+  res.className = "swap-result swap-ok";
+  res.innerHTML = "Rotation : " + a + " analysée.";
+}
 
 function calculerFatigue(){
   const rot = document.getElementById("selectRotationRepos").value;
-  const data = analyseRotation(rot);
-  const typeVol = prompt("Type de vol ? (1: Court, 2: Long, 3: Très Long)", "2");
-  const coef = typeVol === "3" ? 2.0 : (typeVol === "2" ? 1.5 : 1.0);
-  const fatigue = (data.jours * 1.5) * coef;
-  let type = fatigue > 10 ? "swap-bad" : (fatigue > 5 ? "swap-warning" : "swap-ok");
-  let conseil = fatigue > 10 ? "Indice critique : Repos total indispensable." : (fatigue > 5 ? "Indice élevé : Coupure nécessaire." : "Indice faible : Planning favorable.");
-  setMessage("resultatFatigue", type, `Indice : ${fatigue.toFixed(1)}/20<br><br>${conseil}`);
+  const type = prompt("Type vol? (1:Court, 2:Long, 3:VLC)", "2");
+  const f = ( (rot.match(/\d+/) || [0])[0] * 1.5 ) * (type==="3"?2.0:1.5);
+  const res = document.getElementById("resultatFatigue");
+  res.classList.remove("hidden");
+  res.className = "swap-result " + (f>10?"swap-bad":"swap-ok");
+  res.innerHTML = "Indice : " + f.toFixed(1) + "/20";
 }
-// ...
+
+function logout(){ sessionStorage.clear(); location.reload(); }
 </script>
 </body>
 </html>
