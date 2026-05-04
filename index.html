@@ -17,68 +17,61 @@ button:hover{box-shadow:0 0 30px rgba(45,212,191,.9)}
 button.secondary{background:transparent; color:var(--acc2); border:2px solid var(--acc2); box-shadow:0 0 10px rgba(96,165,250,.4)}
 button.danger{background:transparent; color:var(--bad); border:2px solid var(--bad); box-shadow:0 0 10px rgba(251,113,133,.4)}
 input,select,textarea{width:100%; padding:14px; margin:8px 0 14px; border-radius:14px; border:2px solid var(--acc); background:var(--card2); color:var(--txt); font-size:16px; outline:none}
-textarea{min-height:90px; resize:vertical}
 label{display:block; color:var(--acc); font-weight:700; margin-top:10px; text-shadow:0 0 5px var(--acc)}
 .tabs{display:grid; grid-template-columns:repeat(5,1fr); gap:10px}
-.info-box{background:rgba(96,165,250,.08); border:1px solid rgba(96,165,250,.3); border-radius:14px; padding:12px; margin-top:10px; line-height:1.45}
-.rotation-item,.history-item,.profile-row{margin-top:10px; padding:12px; border-radius:14px; background:rgba(96,165,250,.08); border:1px solid var(--acc2); line-height:1.45}
 .swap-result{margin-top:18px; padding:16px; border-radius:16px; font-weight:700; line-height:1.5}
 .swap-ok{background:rgba(74,222,128,.1); border:2px solid var(--ok); color:var(--ok)}
 .swap-bad{background:rgba(251,113,133,.1); border:2px solid var(--bad); color:var(--bad)}
-.suggestion-table{width:100%; border-collapse:collapse; margin-top:15px; overflow:hidden; border-radius:14px}
-.suggestion-table th,.suggestion-table td{padding:12px; border-bottom:1px solid rgba(255,255,255,.05); text-align:left; font-size:14px}
-.suggestion-table th{color:var(--acc); background:rgba(45,212,191,.1)}
-.score-high{color:var(--ok);font-weight:700}
-.score-mid{color:var(--acc2);font-weight:700}
-.score-low{color:var(--bad);font-weight:700}
-.row-actions{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px}
-code{background:rgba(255,255,255,.1); padding:2px 6px; border-radius:8px; color:var(--acc)}
-@media(max-width:640px){body{padding:12px}.grid,.tabs,.row-actions{grid-template-columns:1fr}}
+.swap-warning{background:rgba(250,204,21,.1); border:2px solid var(--warn); color:var(--warn)}
 </style>
 </head>
 <body>
 <div id="loginCard" class="card">
   <h2>Connexion</h2>
-  <label for="login">Code profil</label>
-  <input id="login" placeholder="Ex : PNC01">
-  <label for="pass">Mot de passe</label>
-  <input id="pass" type="password" placeholder="Ex : demo01">
+  <label>Code profil</label><input id="login" placeholder="Ex : PNC01">
+  <label>Mot de passe</label><input id="pass" type="password" placeholder="Ex : demo01">
   <button onclick="connect()">Se connecter</button>
-  <div class="info-box small">
-    <div><strong>Admin :</strong> <code>ADMIN</code> / <code>admin2026</code></div>
-  </div>
-  <div id="loginMessage" class="swap-result hidden" style="display:none;"></div>
+  <div id="loginMessage" class="swap-result hidden"></div>
 </div>
 
-<div id="appCard" class="card hidden" style="display:none;">
-  <div class="grid">
-    <div><h2>Profil connecté</h2><div id="userResume" class="info-box"></div></div>
-    <div><h2>Actions</h2><button class="secondary" onclick="logout()">Se déconnecter</button></div>
-  </div>
+<div id="appCard" class="card hidden">
+  <div class="grid"><div><h2>Profil</h2><div id="userResume" class="info-box"></div></div>
+  <div><h2>Actions</h2><button class="secondary" onclick="logout()">Déconnexion</button></div></div>
 </div>
 
-<div id="appCard2" class="card hidden" style="display:none;">
-  <h2>Navigation</h2>
+<div id="appCard2" class="card hidden">
   <div class="tabs">
-    <button onclick="showTab('mesRotations')">Rotations</button>
-    <button onclick="showTab('suggestionsAuto')">Suggestions</button>
+    <button onclick="showTab('mesRotations')">Rots</button>
     <button onclick="showTab('moteurSwap')">Swap</button>
-    <button onclick="showTab('historique')">Historique</button>
+    <button onclick="showTab('historique')">Hist</button>
+    <button onclick="showTab('strategieRepos')">Repos</button>
     <button id="adminTabBtn" onclick="showTab('adminPanel')" class="secondary hidden">Admin</button>
   </div>
 </div>
 
-<div id="appCard3" class="card hidden" style="display:none;">
+<div id="appCard3" class="card hidden">
   <div id="mesRotations"><h3>Mes rotations</h3><div id="rotationsList"></div></div>
-  <div id="suggestionsAuto" class="hidden" style="display:none;"><h3>Suggestions</h3><table class="suggestion-table"><thead><tr><th>Dst</th><th>Dem</th><th>Obt</th><th>Score</th></tr></thead><tbody id="suggestionsTableBody"></tbody></table></div>
-  <div id="moteurSwap" class="hidden" style="display:none;"><h3>Swap</h3><label>Actuelle</label><select id="rotationActuelle"></select><label>Recherchée</label><input id="rotationRecherchee"><button onclick="calcSwap()">Calculer</button><div id="swapResult" class="swap-result hidden"></div></div>
-  <div id="historique" class="hidden" style="display:none;"><h3>Historique</h3><input id="historiqueRotation" placeholder="Rotation"><select id="historiqueResultat"><option value="obtenue">Obtenue</option><option value="non_obtenue">Non obtenue</option></select><button onclick="saveHistorique()">Enregistrer</button><div id="historiqueMessage" class="swap-result hidden"></div><div id="historiqueListe"></div></div>
-  <div id="adminPanel" class="hidden" style="display:none;"><h3>Admin</h3><input id="searchImmat" placeholder="Recherche Immat" oninput="renderProfiles()"><div class="grid"><input id="adminLogin" placeholder="Login"><input id="adminPass" placeholder="Pass"></div><input id="adminNom" placeholder="Nom"><input id="adminGrade" placeholder="Grade"><input id="adminImmat" placeholder="Immat"><input id="adminBase" placeholder="Base"><textarea id="adminRotations" placeholder="Rotations"></textarea><button onclick="addOrUpdateProfile()">Ajouter/Modifier</button><div id="profilesList"></div></div>
+  <div id="moteurSwap" class="hidden"><h3>Swap</h3><select id="rotationActuelle"></select><input id="rotationRecherchee" placeholder="Rotation recherchée"><button onclick="calcSwap()">Calculer</button><div id="swapResult" class="swap-result hidden"></div></div>
+  <div id="historique" class="hidden"><h3>Historique</h3><input id="historiqueRotation" placeholder="Rotation"><select id="historiqueResultat"><option value="obtenue">Obtenue</option><option value="non_obtenue">Non obtenue</option></select><button onclick="saveHistorique()">Enregistrer</button><div id="historiqueMessage" class="swap-result hidden"></div><div id="historiqueListe"></div></div>
+  <div id="strategieRepos" class="hidden"><h3>Stratégie Repos</h3><label>Rotation</label><select id="selectRotationRepos"></select><button onclick="calculerFatigue()">Calculer Fatigue</button><div id="resultatFatigue" class="swap-result hidden"></div></div>
+  <div id="adminPanel" class="hidden"><h3>Admin</h3><input id="searchImmat" placeholder="Recherche Immat" oninput="renderProfiles()"><div id="profilesList"></div></div>
 </div>
 
 <script>
-// Logique complète (inclure ici la fonction connect, render, save, etc.)
-// ... (Copie le bloc script de la réponse précédente ici) ...
+// ... (Utilise le même script que la version précédente, 
+//      assure-toi juste d'ajouter la nouvelle fonction calculerFatigue ci-dessous) ...
+
+function calculerFatigue(){
+  const rot = document.getElementById("selectRotationRepos").value;
+  const data = analyseRotation(rot);
+  const typeVol = prompt("Type de vol ? (1: Court, 2: Long, 3: Très Long)", "2");
+  const coef = typeVol === "3" ? 2.0 : (typeVol === "2" ? 1.5 : 1.0);
+  const fatigue = (data.jours * 1.5) * coef;
+  let type = fatigue > 10 ? "swap-bad" : (fatigue > 5 ? "swap-warning" : "swap-ok");
+  let conseil = fatigue > 10 ? "Indice critique : Repos total indispensable." : (fatigue > 5 ? "Indice élevé : Coupure nécessaire." : "Indice faible : Planning favorable.");
+  setMessage("resultatFatigue", type, `Indice : ${fatigue.toFixed(1)}/20<br><br>${conseil}`);
+}
+// ...
 </script>
 </body>
 </html>
