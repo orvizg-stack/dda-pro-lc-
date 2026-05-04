@@ -3,116 +3,90 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DDA Pro LC V21 - Neon</title>
-<meta name="theme-color" content="#2dd4bf">
+<title>DDA Pro LC V21 - Neon Pulsing</title>
 <style>
-:root{--bg:#07111f; --card:#111b2f; --card2:#17233d; --txt:#edf4ff; --mut:#9eb2d2; --acc:#2dd4bf; --acc2:#60a5fa; --ok:#4ade80; --bad:#fb7185; --warn:#facc15;}
-*{box-sizing:border-box}
-body{background:var(--bg); color:var(--txt); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; padding:20px; margin:0}
-.card{background:var(--card); padding:20px; border-radius:20px; margin-bottom:20px; border:1px solid rgba(45,212,191,0.3); box-shadow:0 0 15px rgba(45,212,191,.2)}
-.hidden{display:none !important}
-.grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-button{width:100%; padding:15px; margin:6px 0; border-radius:15px; border:none; font-weight:900; background:linear-gradient(135deg,var(--acc),var(--acc2)); color:#06101d; text-transform:uppercase; letter-spacing:1px; box-shadow:0 0 20px rgba(45,212,191,.6), inset 0 0 10px rgba(255,255,255,.3); transition:all 0.3s ease;}
-button:hover{box-shadow:0 0 30px rgba(45,212,191,.9)}
-button.secondary{background:transparent; color:var(--acc2); border:2px solid var(--acc2); box-shadow:0 0 10px rgba(96,165,250,.4)}
-button.danger{background:transparent; color:var(--bad); border:2px solid var(--bad); box-shadow:0 0 10px rgba(251,113,133,.4)}
-input,select,textarea{width:100%; padding:14px; margin:8px 0 14px; border-radius:14px; border:2px solid var(--acc); background:var(--card2); color:var(--txt); font-size:16px; outline:none}
-label{display:block; color:var(--acc); font-weight:700; margin-top:10px; text-shadow:0 0 5px var(--acc)}
-.tabs{display:grid; grid-template-columns:repeat(4,1fr); gap:5px}
-.info-box{background:rgba(96,165,250,.08); border:1px solid rgba(96,165,250,.3); border-radius:14px; padding:12px; margin-top:10px; line-height:1.45}
-.rotation-item{margin-top:10px; padding:12px; border-radius:14px; background:rgba(96,165,250,.08); border:1px solid var(--acc2)}
-.swap-result{margin-top:18px; padding:16px; border-radius:16px; font-weight:700; line-height:1.5}
-.swap-ok{background:rgba(74,222,128,.1); border:2px solid var(--ok); color:var(--ok)}
-.swap-bad{background:rgba(251,113,133,.1); border:2px solid var(--bad); color:var(--bad)}
+:root{--bg:#07111f; --card:#111b2f; --txt:#edf4ff; --t:#2dd4bf; --b:#60a5fa; --y:#facc15; --r:#fb7185;}
+body{background:var(--bg); color:var(--txt); font-family:sans-serif; padding:20px;}
+.card{background:var(--card); padding:20px; border-radius:20px; margin-bottom:20px;}
+.hidden{display:none !important;}
+
+/* --- Animation Scintillement --- */
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); box-shadow: 0 0 5px var(--t); }
+  50% { opacity: 0.7; transform: scale(1.02); box-shadow: 0 0 15px var(--t); }
+  100% { opacity: 1; transform: scale(1); box-shadow: 0 0 5px var(--t); }
+}
+.scintille { animation: pulse 2s infinite ease-in-out; border: 1px solid var(--t); }
+
+button{width:100%; padding:15px; margin:6px 0; border-radius:15px; border:none; font-weight:900; text-transform:uppercase; color:#000; box-shadow:0 0 15px rgba(0,0,0,0.5); transition:0.3s;}
+.btn-rot{background:var(--t);} .btn-swap{background:var(--b);} .btn-repo{background:var(--y);} .btn-out{background:var(--r);}
+
+input,select{width:100%; padding:14px; margin:8px 0; border-radius:14px; background:var(--card); border:2px solid var(--t); color:var(--txt);}
+.swap-result{padding:16px; border-radius:16px; margin-top:10px; font-weight:bold;}
 </style>
 </head>
 <body>
 
 <div id="loginCard" class="card">
   <h2>Connexion</h2>
-  <label>Code profil</label><input id="login" placeholder="Ex : PNC01">
-  <label>Mot de passe</label><input id="pass" type="password" placeholder="Ex : demo01">
-  <button onclick="connect()">Se connecter</button>
-  <div id="loginMessage" class="swap-result hidden"></div>
+  <input id="login" placeholder="Code profil">
+  <input id="pass" type="password" placeholder="Mot de passe">
+  <button class="btn-rot" onclick="connect()">Se connecter</button>
 </div>
 
 <div id="appCard" class="card hidden">
-  <div class="grid"><div><h2>Profil</h2><div id="userResume" class="info-box"></div></div>
-  <div><h2>Actions</h2><button class="secondary" onclick="logout()">Déconnexion</button></div></div>
-</div>
-
-<div id="appCard2" class="card hidden">
-  <div class="tabs">
-    <button onclick="showTab('mesRotations')">Rots</button>
-    <button onclick="showTab('moteurSwap')">Swap</button>
-    <button onclick="showTab('strategieRepos')">Repos</button>
-    <button id="adminTabBtn" onclick="showTab('adminPanel')" class="secondary hidden">Admin</button>
-  </div>
-</div>
-
-<div id="appCard3" class="card hidden">
-  <div id="mesRotations"><h3>Mes rotations</h3><div id="rotationsList"></div></div>
-  <div id="moteurSwap" class="hidden"><h3>Swap</h3><select id="rotationActuelle"></select><input id="rotationRecherchee" placeholder="Rotation recherchée"><button onclick="calcSwap()">Calculer</button><div id="swapResult" class="swap-result hidden"></div></div>
-  <div id="strategieRepos" class="hidden"><h3>Stratégie Repos</h3><select id="selectRotationRepos"></select><button onclick="calculerFatigue()">Calculer Fatigue</button><div id="resultatFatigue" class="swap-result hidden"></div></div>
-  <div id="adminPanel" class="hidden"><h3>Admin</h3><input id="searchImmat" placeholder="Recherche Immat" oninput="renderProfiles()"><div id="profilesList"></div></div>
+  <button class="btn-rot" onclick="showTab('mesRotations')">Mes Rotations</button>
+  <button class="btn-swap" onclick="showTab('moteurSwap')">Moteur de Swap</button>
+  <button class="btn-repo" onclick="showTab('strategieRepos')">Stratégie Repos</button>
+  <button class="btn-out" onclick="logout()">Déconnexion</button>
+  
+  <div id="mesRotations" class="hidden"><h3>Mes Rotations</h3><div id="rotationsList"></div></div>
+  <div id="moteurSwap" class="hidden"><h3>Swap</h3><select id="selRot"></select><input id="rotRech"><button class="btn-swap" onclick="calcSwap()">Calculer</button><div id="swapResult" class="swap-result hidden"></div></div>
+  <div id="strategieRepos" class="hidden"><h3>Stratégie Repos</h3><select id="selRepos"></select><button class="btn-repo" onclick="calcFatigue()">Calculer Fatigue</button><div id="resultatFatigue" class="swap-result hidden"></div></div>
 </div>
 
 <script>
-const USERS = {
-  PNC01:{password:"demo01", nom:"Alex Martin", grade:"CC", immat:"700001", base:"CDG", rotations:["JFK 4J 320€","NRT 5J 410€"]},
-  PNC02:{password:"demo02", nom:"Sophie Laurent", grade:"CC", immat:"700002", base:"ORY", rotations:["LAX 5J 430€","MAD 2J 120€"]},
-  PNC03:{password:"demo03", nom:"Julien Robert", grade:"PNC", immat:"700003", base:"CDG", rotations:["DXB 4J 360€","FCO 2J 110€"]}
-};
+const USERS = { PNC01:{password:"demo01", nom:"Alex", rotations:["JFK 4J 320€","NRT 5J 410€"]}, PNC02:{password:"demo02", nom:"Sophie", rotations:["LAX 5J 430€","MAD 2J 120€"]} };
 
 function connect(){
   const l = document.getElementById("login").value.trim().toUpperCase();
   const p = document.getElementById("pass").value.trim();
-  if(l==="ADMIN" && p==="admin2026"){ sessionStorage.setItem("ddaCurrentLogin","ADMIN"); openApp(); return; }
-  if(USERS[l] && USERS[l].password === p){ sessionStorage.setItem("ddaCurrentLogin", l); openApp(); }
-  else { alert("Identifiants incorrects"); }
+  if(USERS[l] && USERS[l].password === p){
+    sessionStorage.setItem("user", l);
+    document.getElementById("loginCard").classList.add("hidden");
+    document.getElementById("appCard").classList.remove("hidden");
+    loadUserData();
+  } else { alert("Code incorrect"); }
 }
 
-function openApp(){
-  document.getElementById("loginCard").classList.add("hidden");
-  ["appCard","appCard2","appCard3"].forEach(id => document.getElementById(id).classList.remove("hidden"));
-  document.getElementById("adminTabBtn").classList.toggle("hidden", sessionStorage.getItem("ddaCurrentLogin")!=="ADMIN");
-  render();
-}
-
-function render(){
-  const l = sessionStorage.getItem("ddaCurrentLogin");
+function loadUserData(){
+  const l = sessionStorage.getItem("user");
   const u = USERS[l];
-  if(u){
-    document.getElementById("userResume").innerHTML = `${l} - ${u.nom}`;
-    document.getElementById("rotationsList").innerHTML = u.rotations.map(r=>`<div class="rotation-item">${r}</div>`).join("");
-    const sel = document.getElementById("rotationActuelle");
-    const sel2 = document.getElementById("selectRotationRepos");
-    if(sel) sel.innerHTML = u.rotations.map(r=>`<option value="${r}">${r}</option>`).join("");
-    if(sel2) sel2.innerHTML = u.rotations.map(r=>`<option value="${r}">${r}</option>`).join("");
-  }
+  // Ici on ajoute la classe .scintille pour faire briller les rotations
+  document.getElementById("rotationsList").innerHTML = u.rotations.map(r=>`<div class="scintille" style="margin:10px; padding:10px; border-radius:10px;">${r}</div>`).join("");
+  document.getElementById("selRot").innerHTML = u.rotations.map(r=>`<option>${r}</option>`).join("");
+  document.getElementById("selRepos").innerHTML = u.rotations.map(r=>`<option>${r}</option>`).join("");
 }
 
 function showTab(id){
-  ["mesRotations","moteurSwap","strategieRepos","adminPanel"].forEach(t => document.getElementById(t).classList.add("hidden"));
+  ["mesRotations","moteurSwap","strategieRepos"].forEach(t => document.getElementById(t).classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
 }
 
 function calcSwap(){
-  const a = document.getElementById("rotationActuelle").value;
   const res = document.getElementById("swapResult");
-  res.classList.remove("hidden");
-  res.className = "swap-result swap-ok";
-  res.innerHTML = "Rotation : " + a + " analysée.";
+  res.classList.remove("hidden"); res.className = "swap-result"; res.style.background = "var(--t)";
+  res.innerHTML = "Calcul Swap réalisé.";
 }
 
-function calculerFatigue(){
-  const rot = document.getElementById("selectRotationRepos").value;
+function calcFatigue(){
+  const rot = document.getElementById("selRepos").value;
   const type = prompt("Type vol? (1:Court, 2:Long, 3:VLC)", "2");
-  const f = ( (rot.match(/\d+/) || [0])[0] * 1.5 ) * (type==="3"?2.0:1.5);
+  const jours = parseInt(rot.match(/\d+/)) || 0;
+  const f = (jours * 1.5) * (type==="3"?2.0:(type==="2"?1.5:1.0));
   const res = document.getElementById("resultatFatigue");
-  res.classList.remove("hidden");
-  res.className = "swap-result " + (f>10?"swap-bad":"swap-ok");
-  res.innerHTML = "Indice : " + f.toFixed(1) + "/20";
+  res.classList.remove("hidden"); res.style.background = f>10?"var(--r)":"var(--t)";
+  res.innerHTML = `Indice Fatigue : ${f.toFixed(1)}/20<br><small>Note : Jours (${jours}) x 1.5 x Coef (${type})</small>`;
 }
 
 function logout(){ sessionStorage.clear(); location.reload(); }
